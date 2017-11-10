@@ -24,22 +24,22 @@ rF.me.pr.tmp <- rF.me.pred
 rF.me.ac.tmp <- test$SWE
 
 
-for(i in 1:10){
-  rF.me <- randomForest(SWE~.,fit.me)
-  rF.me.pred <- predict(rF.me,test)
-  
-  rF.me.pr.tmp <- rF.me.pred
-  rF.me.ac.tmp <- test$SWE
-  
-  if(i==1){
-    rF.me.pr.tmp <- rF.me.pred
-    rF.me.ac.tmp <- test$SWE
-  }
-  else{
-    rF.me.pr.tmp <- c(rF.me.pred,rF.me.pr.tmp)
-    rF.me.ac.tmp <- c(rF.me.ac.tmp,test$SWE)
-  }
-}
+#for(i in 1:10){
+#  rF.me <- randomForest(SWE~.,fit.me)
+#  rF.me.pred <- predict(rF.me,test)
+#  
+#  rF.me.pr.tmp <- rF.me.pred
+#  rF.me.ac.tmp <- test$SWE
+#  
+#  if(i==1){
+#    rF.me.pr.tmp <- rF.me.pred
+#    rF.me.ac.tmp <- test$SWE
+#  }
+#  else{
+#    rF.me.pr.tmp <- c(rF.me.pred,rF.me.pr.tmp)
+#    rF.me.ac.tmp <- c(rF.me.ac.tmp,test$SWE)
+#  }
+#}
 
 
 
