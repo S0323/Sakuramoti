@@ -163,8 +163,6 @@ MER.n3.raw <- MAE.n3.raw/rF.n3.pr.tmp
 (Pred.n3.MRE <- sum((MRE.n3.raw <= 0.25)/length(rF.n3.ac.tmp)))
 (Pred.n3.MER <- sum((MER.n3.raw <= 0.25)/length(rF.n3.ac.tmp)))
 
-install.packages("impute")
-
 #-----missForest-----
 # MAE
 MAE.mF.raw <- abs(rF.mF.pr.tmp - rF.mF.ac.tmp)
