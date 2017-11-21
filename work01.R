@@ -12,6 +12,12 @@ fit.n1 <- read.csv("data/fit_n1.csv") # 無欠損(P削除)
 fit.n2 <- read.csv("data/fit_n2.csv") # 無欠損(S削除)
 fit.n3 <- read.csv("data/fit_n3.csv") # 無欠損(P,S削除)
 
+# パッケージを利用しようと思っていたが，バグ修正のためパッケージを入手できなかった．
+# そのため，今回はすでに両手法を適用済みのデータを使用する．
+fit.kn <- read.csv("data/fit_kn.csv") # k-nn法
+fit.cf <- read.csv("data/fit_cf.csv") # CF応用法
+
+
 #----------#----------#----------#----------#----------#----------#----------#
 # 補完・分析
 library(randomForest)
@@ -22,26 +28,6 @@ rF.me.pred <- predict(rF.me,test)
 
 rF.me.pr.tmp <- rF.me.pred
 rF.me.ac.tmp <- test$SWE
-
-
-#for(i in 1:10){
-#  rF.me <- randomForest(SWE~.,fit.me)
-#  rF.me.pred <- predict(rF.me,test)
-#  
-#  rF.me.pr.tmp <- rF.me.pred
-#  rF.me.ac.tmp <- test$SWE
-#  
-#  if(i==1){
-#    rF.me.pr.tmp <- rF.me.pred
-#    rF.me.ac.tmp <- test$SWE
-#  }
-#  else{
-#    rF.me.pr.tmp <- c(rF.me.pred,rF.me.pr.tmp)
-#    rF.me.ac.tmp <- c(rF.me.ac.tmp,test$SWE)
-#  }
-#}
-
-
 
 #-----無欠損データ作成法-----
 rF.n1 <- randomForest(SWE~.,fit.n1)
@@ -104,6 +90,19 @@ for(i in 1:10){
     rF.mi.ac.tmp <- c(rF.mi.ac.tmp,test$SWE)
   }
 }
+#-----k-nn法-----
+rF.kn <- randomForest(SWE~.,fit.kn)
+rF.kn.pred <- predict(rF.kn,test)
+
+rF.kn.pr.tmp <- rF.kn.pred
+rF.kn.ac.tmp <- test$SWE
+
+#-----CF応用法-----
+rF.cf <- randomForest(SWE~.,fit.cf)
+rF.cf.pred <- predict(rF.cf,test)
+
+rF.cf.pr.tmp <- rF.cf.pred
+rF.cf.ac.tmp <- test$SWE
 
 #----------#----------#----------#----------#----------#----------#----------#
 # 各手法の評価
@@ -194,4 +193,31 @@ MER.mi.raw <- MAE.mi.raw/rF.mi.pr.tmp
 (Pred.mi.MRE <- sum((MRE.mi.raw <= 0.25)/length(rF.mi.ac.tmp)))
 (Pred.mi.MER <- sum((MER.mi.raw <= 0.25)/length(rF.mi.ac.tmp)))
 
+#-----k-nn法-----
+# MAE
+MAE.kn.raw <- abs(rF.kn.pr.tmp - rF.kn.ac.tmp)
+(MAE.me <- median(MAE.kn.raw))
+# MRE
+MRE.kn.raw <- MAE.kn.raw/rF.kn.ac.tmp
+(MRE.me <- median(MRE.kn.raw))
+# MER
+MER.kn.raw <- MAE.kn.raw/rF.kn.pr.tmp
+(MER.me <- median(MER.kn.raw))
+# Pred(25)
+(Pred.kn.MRE <- sum((MRE.kn.raw <= 0.25)/length(rF.kn.ac.tmp)))
+(Pred.kn.MER <- sum((MER.kn.raw <= 0.25)/length(rF.kn.ac.tmp)))
+
+#-----CF応用法-----
+# MAE
+MAE.cf.raw <- abs(rF.cf.pr.tmp - rF.cf.ac.tmp)
+(MAE.me <- median(MAE.cf.raw))
+# MRE
+MRE.cf.raw <- MAE.cf.raw/rF.cf.ac.tmp
+(MRE.me <- median(MRE.cf.raw))
+# MER
+MER.cf.raw <- MAE.cf.raw/rF.cf.pr.tmp
+(MER.me <- median(MER.cf.raw))
+# Pred(25)
+(Pred.cf.MRE <- sum((MRE.cf.raw <= 0.25)/length(rF.cf.ac.tmp)))
+(Pred.cf.MER <- sum((MER.cf.raw <= 0.25)/length(rF.cf.ac.tmp)))
 #----------#----------#----------#----------#----------#----------#----------#
