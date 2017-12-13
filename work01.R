@@ -1,7 +1,3 @@
-getwd()
-setwd("C:/Users/pc/Dropbox/repo_ccc/work") # desktop
-setwd("C:/Users/Sakura/Dropbox/repo_ccc/work") # notepc
-
 # テストデータのインポート
 test <- read.csv("data/test.csv")
 
@@ -11,23 +7,19 @@ fit.me <- read.csv("data/fit_me.csv") # 平均値挿入法
 fit.n1 <- read.csv("data/fit_n1.csv") # 無欠損(P削除)
 fit.n2 <- read.csv("data/fit_n2.csv") # 無欠損(S削除)
 fit.n3 <- read.csv("data/fit_n3.csv") # 無欠損(P,S削除)
-
-# パッケージを利用しようと思っていたが，バグ修正のためパッケージを入手できなかった．
-# そのため，今回はすでに両手法を適用済みのデータを使用する．
 fit.kn <- read.csv("data/fit_kn.csv") # k-nn法
 fit.cf <- read.csv("data/fit_cf.csv") # CF応用法
-
 
 #----------#----------#----------#----------#----------#----------#----------#
 # 補完・分析
 library(randomForest)
 
 #-----平均値挿入法-----
-rF.me <- randomForest(SWE~.,fit.me)
-rF.me.pred <- predict(rF.me,test)
+rF.me <- randomForest(SWE~.,fit.me) # randomForest実行
+rF.me.pred <- predict(rF.me,test) # テストデータ適用
 
-rF.me.pr.tmp <- rF.me.pred
-rF.me.ac.tmp <- test$SWE
+rF.me.pr.tmp <- rF.me.pred # 予測値
+rF.me.ac.tmp <- test$SWE # 実測値
 
 #-----無欠損データ作成法-----
 rF.n1 <- randomForest(SWE~.,fit.n1)
@@ -44,10 +36,24 @@ rF.n2.ac.tmp <- test$SWE
 rF.n3.pr.tmp <- rF.n3.pred
 rF.n3.ac.tmp <- test$SWE
 
+#-----k-nn法-----
+rF.kn <- randomForest(SWE~.,fit.kn)
+rF.kn.pred <- predict(rF.kn,test)
+
+rF.kn.pr.tmp <- rF.kn.pred
+rF.kn.ac.tmp <- test$SWE
+
+#-----CF応用法-----
+rF.cf <- randomForest(SWE~.,fit.cf)
+rF.cf.pred <- predict(rF.cf,test)
+
+rF.cf.pr.tmp <- rF.cf.pred
+rF.cf.ac.tmp <- test$SWE
+
 #-----missForest-----
 library(missForest)
 
-for(i in 1:10){
+for(i in 1:10){ # ランダム性を含むので10回繰り返した．
   set.seed(i)
   fit.mF <- missForest(fit)$ximp
   
@@ -69,7 +75,7 @@ library(mice)
 
 dupe <- 10 # 複数個数
 
-for(i in 1:10){
+for(i in 1:10){ # ランダム性を含むので10回繰り返した．
   fit.m <- mice(fit,seed = i,m = dupe)
   fit.m.rep <- complete(fit.m,action = "repeated")
   
@@ -90,19 +96,6 @@ for(i in 1:10){
     rF.mi.ac.tmp <- c(rF.mi.ac.tmp,test$SWE)
   }
 }
-#-----k-nn法-----
-rF.kn <- randomForest(SWE~.,fit.kn)
-rF.kn.pred <- predict(rF.kn,test)
-
-rF.kn.pr.tmp <- rF.kn.pred
-rF.kn.ac.tmp <- test$SWE
-
-#-----CF応用法-----
-rF.cf <- randomForest(SWE~.,fit.cf)
-rF.cf.pred <- predict(rF.cf,test)
-
-rF.cf.pr.tmp <- rF.cf.pred
-rF.cf.ac.tmp <- test$SWE
 
 #----------#----------#----------#----------#----------#----------#----------#
 # 各手法の評価
@@ -163,6 +156,34 @@ MER.n3.raw <- MAE.n3.raw/rF.n3.pr.tmp
 (Pred.n3.MRE <- sum((MRE.n3.raw <= 0.25)/length(rF.n3.ac.tmp)))
 (Pred.n3.MER <- sum((MER.n3.raw <= 0.25)/length(rF.n3.ac.tmp)))
 
+#-----k-nn法-----
+# MAE
+MAE.kn.raw <- abs(rF.kn.pr.tmp - rF.kn.ac.tmp)
+(MAE.kn <- median(MAE.kn.raw))
+# MRE
+MRE.kn.raw <- MAE.kn.raw/rF.kn.ac.tmp
+(MRE.kn <- median(MRE.kn.raw))
+# MER
+MER.kn.raw <- MAE.kn.raw/rF.kn.pr.tmp
+(MER.kn <- median(MER.kn.raw))
+# Pred(25)
+(Pred.kn.MRE <- sum((MRE.kn.raw <= 0.25)/length(rF.kn.ac.tmp)))
+(Pred.kn.MER <- sum((MER.kn.raw <= 0.25)/length(rF.kn.ac.tmp)))
+
+#-----CF応用法-----
+# MAE
+MAE.cf.raw <- abs(rF.cf.pr.tmp - rF.cf.ac.tmp)
+(MAE.cf <- median(MAE.cf.raw))
+# MRE
+MRE.cf.raw <- MAE.cf.raw/rF.cf.ac.tmp
+(MRE.cf <- median(MRE.cf.raw))
+# MER
+MER.cf.raw <- MAE.cf.raw/rF.cf.pr.tmp
+(MER.cf <- median(MER.cf.raw))
+# Pred(25)
+(Pred.cf.MRE <- sum((MRE.cf.raw <= 0.25)/length(rF.cf.ac.tmp)))
+(Pred.cf.MER <- sum((MER.cf.raw <= 0.25)/length(rF.cf.ac.tmp)))
+
 #-----missForest-----
 # MAE
 MAE.mF.raw <- abs(rF.mF.pr.tmp - rF.mF.ac.tmp)
@@ -190,32 +211,54 @@ MER.mi.raw <- MAE.mi.raw/rF.mi.pr.tmp
 # Pred(25)
 (Pred.mi.MRE <- sum((MRE.mi.raw <= 0.25)/length(rF.mi.ac.tmp)))
 (Pred.mi.MER <- sum((MER.mi.raw <= 0.25)/length(rF.mi.ac.tmp)))
-
-#-----k-nn法-----
-# MAE
-MAE.kn.raw <- abs(rF.kn.pr.tmp - rF.kn.ac.tmp)
-(MAE.me <- median(MAE.kn.raw))
-# MRE
-MRE.kn.raw <- MAE.kn.raw/rF.kn.ac.tmp
-(MRE.me <- median(MRE.kn.raw))
-# MER
-MER.kn.raw <- MAE.kn.raw/rF.kn.pr.tmp
-(MER.me <- median(MER.kn.raw))
-# Pred(25)
-(Pred.kn.MRE <- sum((MRE.kn.raw <= 0.25)/length(rF.kn.ac.tmp)))
-(Pred.kn.MER <- sum((MER.kn.raw <= 0.25)/length(rF.kn.ac.tmp)))
-
-#-----CF応用法-----
-# MAE
-MAE.cf.raw <- abs(rF.cf.pr.tmp - rF.cf.ac.tmp)
-(MAE.me <- median(MAE.cf.raw))
-# MRE
-MRE.cf.raw <- MAE.cf.raw/rF.cf.ac.tmp
-(MRE.me <- median(MRE.cf.raw))
-# MER
-MER.cf.raw <- MAE.cf.raw/rF.cf.pr.tmp
-(MER.me <- median(MER.cf.raw))
-# Pred(25)
-(Pred.cf.MRE <- sum((MRE.cf.raw <= 0.25)/length(rF.cf.ac.tmp)))
-(Pred.cf.MER <- sum((MER.cf.raw <= 0.25)/length(rF.cf.ac.tmp)))
 #----------#----------#----------#----------#----------#----------#----------#
+# 出力
+#-----MAE-----
+MAE <- list(
+  me = MAE.me.raw,
+  del.p = MAE.n1.raw,
+  del.s = MAE.n2.raw,
+  del.ps = MAE.n3.raw,
+  kn = MAE.kn.raw,
+  CF = MAE.cf.raw,
+  mF = MAE.mF.raw,
+  mi = MAE.mi.raw
+  )
+boxplot(MAE,boxwex = 0.9,ylim = c(0,10000),yaxp=c(0,10000,10),ylab = "MAE")
+
+#-----MRE-----
+MRE <- list(
+  me = MRE.me.raw,
+  del.p = MRE.n1.raw,
+  del.s = MRE.n2.raw,
+  del.ps = MRE.n3.raw,
+  kn = MRE.kn.raw,
+  CF = MRE.cf.raw,
+  mF = MRE.mF.raw,
+  mi = MRE.mi.raw
+)
+boxplot(MRE,boxwex = 0.9,ylim = c(0,1.6),yaxp=c(0,1.6,8),ylab = "MRE")
+
+#-----MER-----
+MER <- list(
+  me = MER.me.raw,
+  del.p = MER.n1.raw,
+  del.s = MER.n2.raw,
+  del.ps = MER.n3.raw,
+  kn = MER.kn.raw,
+  CF = MER.cf.raw,
+  mF = MER.mF.raw,
+  mi = MER.mi.raw
+)
+boxplot(MER,boxwex = 0.9,ylim = c(0,1.6),yaxp=c(0,1.6,8),ylab = "MER")
+
+#-----
+result <- data.frame(
+  name <- c("me","del p","del s","del ps","kn","cf","mf","mi"),
+  mae <- c(MAE.me,MAE.n1,MAE.n2,MAE.n3,MAE.kn,MAE.cf,MAE.mF,MAE.mi),
+  mre <- c(MRE.me,MRE.n1,MRE.n2,MRE.n3,MRE.kn,MRE.cf,MRE.mF,MRE.mi),
+  mer <- c(MER.me,MER.n1,MER.n2,MER.n3,MER.kn,MER.cf,MER.mF,MER.mi),
+  predmre <- c(Pred.me.MRE,Pred.n1.MRE,Pred.n2.MRE,Pred.n3.MRE,Pred.kn.MRE,Pred.cf.MRE,Pred.mF.MRE,Pred.mi.MRE),
+  predmer <- c(Pred.me.MER,Pred.n1.MER,Pred.n2.MER,Pred.n3.MER,Pred.kn.MER,Pred.cf.MER,Pred.mF.MER,Pred.mi.MER)
+)
+write.csv(result,"res.csv",quote=FALSE,row.names=FALSE)
